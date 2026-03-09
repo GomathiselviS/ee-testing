@@ -1,5 +1,12 @@
 # EE Test
 
+## Getting Started
+
+```bash
+git clone https://github.com/GomathiselviS/ee-testing.git
+cd ee-testing
+```
+
 ## Prerequisites
 
 - Set environment variables:
