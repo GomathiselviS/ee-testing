@@ -1,0 +1,4 @@
+[appliance:vars]
+collection_name=aws
+collection_namespace=amazon
+

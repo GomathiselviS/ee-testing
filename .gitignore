@@ -1,0 +1,7 @@
+*.retry
+*.log
+.ansible/
+.ansible-navigator/
+ansible-navigator.log
+site-artifact-*
+collections-artifact-*

@@ -1,0 +1,59 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    collection_path: /usr/share/ansible/collections/ansible_collections
+    collection_namespace: amazon
+    collection_name: aws
+    integration_tests_path: "{{ collection_path }}/{{ collection_namespace }}/{{ collection_name }}/tests/integration/targets"
+    integration_target_failures: []
+    aws_access_key: "{{ lookup('env', 'aws_access_key_id') }}"
+    aws_secret_key: "{{ lookup('env', 'aws_secret_access_key') }}"
+    aws_region: "{{ lookup('env', 'aws_region') | default('us-east-1', true) }}"
+    region: "{{ aws_region }}"
+    resource_prefix: "ansible-test"
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
+    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
+    AWS_DEFAULT_REGION: "{{ aws_region }}"
+
+  pre_tasks:
+    - name: Install required collections for amazon.aws
+      command: ansible-galaxy collection install community.aws --force
+      changed_when: true
+      when: collection_namespace == "amazon" and collection_name == "aws"
+
+  tasks:
+    - name: Set specific targets
+      set_fact:
+        _integration_targets: "{{ target.split(',') | map('trim') | map('regex_replace', '^(.*)$', integration_tests_path ~ '/\\1') | list }}"
+      when: target is defined
+
+    - name: Find integration test targets
+      find:
+        file_type: directory
+        paths: "{{ integration_tests_path }}"
+        recurse: false
+      register: _targets
+      when: target is not defined
+
+    - name: Format integration targets
+      set_fact:
+        _integration_targets: "{{ _targets.files | map(attribute='path') | list | sort }}"
+      when: target is not defined
+
+    - name: Report missing integration targets
+      fail:
+        msg: "No integration targets found"
+      when: _integration_targets | length == 0
+
+    - name: Test targets found
+      debug:
+        msg: "{{ _integration_targets }}"
+
+    - name: Run integration tests
+      include_tasks:
+        file: include_role.yaml
+      with_items:
+        - "{{ _integration_targets }}"

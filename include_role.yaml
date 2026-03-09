@@ -1,0 +1,4 @@
+---
+- name: Run target role
+  include_role:
+    name: "{{ item }}"
